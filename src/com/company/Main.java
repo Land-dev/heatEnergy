@@ -8,8 +8,8 @@ public class Main {
     public static final double specificHeatSolid = 2.108;
     public static final double specificHeatWater = 4.184;
     public static final double specificHeatVapor = 1.996;
-    public static final double LatentHeatFusion = .333;
-    public static final double LatentHeatVaporization = 2.257;
+    public static final double latentHeatFusion = .333;
+    public static final double latentHeatVaporization = 2.257;
 
 
     public static void main(String[] args) {
@@ -31,69 +31,129 @@ public class Main {
         double tempChange = endingTemp - startingTemp;
 
 
-        String startingPhase = startingPhaseCalculator(startingTemp);
-        String endingPhase = endingPhaseCalculator(endingTemp);
+        String startingPhase = phaseCalculator(startingTemp);
+        String endingPhase = phaseCalculator(endingTemp);
 
         System.out.println("Mass: " + mass + "\nStarting Temperature: " + startingTemp + "C" + " (" + startingPhase + ")"+
                 "\nEnding Temperature: " + endingTemp + "C" + " (" + endingPhase + ")");
 
-        double heatEnergy = 0;
-        double phaseEnergy = 0;
-        double totalHeatEnergy = 0;
+
         String phase = "";
-        String heatingCooling = heatingOrCooling(tempChange);
+        double vaporTempChange = 0;
+        boolean endothermic = endothermic(tempChange);
 
-        if (startingPhase == "Water Vapor" && endingPhase == "Water Vapor") {
-            heatEnergy = mass * specificHeatVapor * tempChange;
-            totalHeatEnergy = heatEnergy;
-            phase = "Vapor";
-        } else if (startingPhase == "Liquid Water" && endingPhase == "Liquid Water") {
-            heatEnergy = mass * specificHeatWater * tempChange;
-            totalHeatEnergy = heatEnergy;
-            phase = "Liquid";
-        } else if (startingPhase == "Ice" && endingPhase == "Ice") {
-            heatEnergy = mass * specificHeatSolid * tempChange;
-            totalHeatEnergy = heatEnergy;
-            phase = "Ice";
-        } else if (startingPhase == "Ice" && endingPhase == "Liquid Water") {
+        double iceEnergy = iceEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
+        double fusionEnergy = fusion(mass, endothermic);
+        double liquidEnergy = liquidEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
+        double vaporizationEnergy = vaporization(mass, endothermic);
+        double vaporEnergy = vaporEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
 
-        }
-
+        double heatEnergy = iceEnergy + vaporEnergy + liquidEnergy;
+        double phaseEnergy = fusionEnergy + vaporizationEnergy;
+        double totalHeatEnergy = heatEnergy + phaseEnergy;
 
         System.out.println("Total Heat Energy: " + totalHeatEnergy + " kJ");
     }
 
-    public static String heatingOrCooling (double tempChange) {
-        String heatingCooling = new String();
+    public static boolean endothermic (double tempChange) {
+        boolean endothermic = false;
         if (tempChange > 0) {
-            heatingCooling = "Heating";
-        } else {
-            heatingCooling = "Cooling";
+            endothermic = true;
         }
-        return heatingCooling;
+        return endothermic;
     }
 
-    public static String startingPhaseCalculator (double startingTemp) {
-        String startingPhase = new String();
-        if (startingTemp > 100) {
-            startingPhase = "Water Vapor";
-        } else if (startingTemp < 100 && startingTemp > 0) {
-            startingPhase = "Liquid Water";
+    public static String phaseCalculator (double phaseTemp) {
+        String phase = new String();
+        if (phaseTemp > 100) {
+            phase = "Water Vapor";
+        } else if (phaseTemp < 100 && phaseTemp > 0) {
+            phase = "Liquid Water";
         } else {
-            startingPhase = "Ice";
+            phase = "Ice";
         }
-        return startingPhase;
+        return phase;
     }
 
-    public static String endingPhaseCalculator (double endingTemp) {
-        String endingPhase = new String();
-        if (endingTemp > 100) {
-            endingPhase = "Water Vapor";
-        } else if (endingTemp < 100 && endingTemp > 0) {
-            endingPhase = "Liquid Water";
-        } else {
-            endingPhase = "Ice";
+
+
+    public static double iceEnergy (double mass, double startTemp, double endTemp, String endingPhase, boolean endothermic) {
+        if (!endingPhase.equals("Ice")) {
+            endTemp = 0;
         }
-        return endingPhase;
+
+        double energyChange = round(mass * specificHeatSolid * (endTemp - startTemp));
+        if (endothermic == true) {
+            System.out.println("Heating (Ice): " + energyChange + " kJ");
+        } else {
+            System.out.println("Cooling (Ice): " + energyChange + " kJ");
+        }
+
+        return  energyChange;
+    }
+
+    public static double vaporEnergy (double mass, double startTemp, double endTemp, String endingPhase, boolean endothermic) {
+        if (!endingPhase.equals("Water Vapor")) {
+            endTemp = 100;
+        }
+
+        double energyChange = round(mass * specificHeatVapor * (endTemp - startTemp));
+        if (endothermic == true) {
+            System.out.println("Heating (Water Vapor): " + energyChange + " kJ");
+        } else {
+            System.out.println("Cooling (Water Vapor): " + energyChange + " kJ");
+        }
+
+        return  energyChange;
+    }
+
+    public static double liquidEnergy (double mass, double startTemp, double endTemp, String endingPhase, boolean endothermic) {
+        if (endingPhase.equals("Ice")) {
+            endTemp = 0;
+        } else if (endingPhase.equals("Water Vapor")) {
+            endTemp = 100;
+        }
+
+        double energyChange = round(mass * specificHeatWater * (endTemp - startTemp));
+        if (endothermic == true) {
+            System.out.println("Heating (Liquid Water): " + energyChange + " kJ");
+        } else {
+            System.out.println("Cooling (Liquid Water): " + energyChange + " kJ");
+        }
+
+        return  energyChange;
+    }
+
+    public static double fusion (double mass, boolean endothermic) {
+        double fusionEnergy = 0;
+        if (endothermic == true) {
+            fusionEnergy = round(mass * latentHeatFusion);
+            System.out.println("Phase Change (Melting): " + fusionEnergy + " kJ");
+        } else {
+            fusionEnergy = round(mass * -latentHeatFusion);
+            System.out.println("Phase Change (Freezing): " + fusionEnergy + " kJ");
+        }
+        return fusionEnergy;
+    }
+
+    public static double vaporization (double mass, boolean endothermic) {
+        double vaporizationEnergy = 0;
+        if (endothermic == true) {
+            vaporizationEnergy = round(mass * latentHeatVaporization);
+            System.out.println("Phase Change (Evaporation): " + vaporizationEnergy + " kJ");
+        } else {
+            vaporizationEnergy = round(mass * -latentHeatVaporization);
+            System.out.println("Phase Change (Condensation): " + vaporizationEnergy + " kJ");
+        }
+        return vaporizationEnergy;
+    }
+
+    public static double round (double x) {
+        x *= 10;
+        if (x > 0) {
+            return (int)(x + 0.5)/10.0;
+        } else {
+            return  (int)(x);
+        }
     }
 }
