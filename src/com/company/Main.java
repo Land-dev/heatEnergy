@@ -5,9 +5,9 @@ import java.util.Scanner;
 public class Main {
 
     // all in kJ
-    public static final double specificHeatSolid = 2.108;
-    public static final double specificHeatWater = 4.184;
-    public static final double specificHeatVapor = 1.996;
+    public static final double specificHeatSolid = 0.002108;
+    public static final double specificHeatWater = 0.004184;
+    public static final double specificHeatVapor = 0.001996;
     public static final double latentHeatFusion = .333;
     public static final double latentHeatVaporization = 2.257;
 
@@ -35,24 +35,58 @@ public class Main {
         String endingPhase = phaseCalculator(endingTemp);
 
         System.out.println("Mass: " + mass + "\nStarting Temperature: " + startingTemp + "C" + " (" + startingPhase + ")"+
-                "\nEnding Temperature: " + endingTemp + "C" + " (" + endingPhase + ")");
+                "\nEnding Temperature: " + endingTemp + "C" + " (" + endingPhase + ")" + "\n");
 
 
         String phase = "";
         double vaporTempChange = 0;
         boolean endothermic = endothermic(tempChange);
 
-        double iceEnergy = iceEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
-        double fusionEnergy = fusion(mass, endothermic);
-        double liquidEnergy = liquidEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
-        double vaporizationEnergy = vaporization(mass, endothermic);
-        double vaporEnergy = vaporEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
 
-        double heatEnergy = iceEnergy + vaporEnergy + liquidEnergy;
-        double phaseEnergy = fusionEnergy + vaporizationEnergy;
-        double totalHeatEnergy = heatEnergy + phaseEnergy;
+//        double iceEnergy = iceEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
+//        double fusionEnergy = fusion(mass, endothermic);
+//        double liquidEnergy = liquidEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
+//        double vaporizationEnergy = vaporization(mass, endothermic);
+//        double vaporEnergy = vaporEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
+//
+//        double heatEnergy = iceEnergy + vaporEnergy + liquidEnergy;
+//        double phaseEnergy = fusionEnergy + vaporizationEnergy;
+//        double totalHeatEnergy = round(heatEnergy + phaseEnergy);
+//
+//        System.out.println("Total Heat Energy: " + totalHeatEnergy + " kJ");
 
-        System.out.println("Total Heat Energy: " + totalHeatEnergy + " kJ");
+        double castlemanHeatEnergy = 0;
+        if(startingPhase.equals("Ice")) {
+            castlemanHeatEnergy += iceEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
+
+            if(!endingPhase.equals("Ice")) {
+                castlemanHeatEnergy += fusion(mass, endothermic);
+                castlemanHeatEnergy += liquidEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
+                if(endingPhase.equals("Water Vapor")) {
+                    castlemanHeatEnergy += vaporization(mass, endothermic);
+                    castlemanHeatEnergy += vaporEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
+                }
+            }
+        } else if (startingPhase.equals("Water Vapor")) {
+            castlemanHeatEnergy += vaporEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
+
+            if(!endingPhase.equals("Water Vapor")) {
+                castlemanHeatEnergy += vaporization(mass, endothermic);
+                castlemanHeatEnergy += liquidEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
+
+                if (endingPhase.equals("Ice")) {
+                    castlemanHeatEnergy += fusion(mass, endothermic);
+                    castlemanHeatEnergy += iceEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
+                }
+            }
+        } else if (startingPhase.equals("Liquid Water")) {
+            castlemanHeatEnergy += liquidEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
+
+            if(endingPhase.equals("Ice")) {
+                
+            }
+        }
+        System.out.println("Total Heat Energy: " + castlemanHeatEnergy + " kJ");
     }
 
     public static boolean endothermic (double tempChange) {
