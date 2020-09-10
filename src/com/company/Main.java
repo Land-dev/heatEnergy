@@ -83,7 +83,11 @@ public class Main {
             castlemanHeatEnergy += liquidEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
 
             if(endingPhase.equals("Ice")) {
-                
+                castlemanHeatEnergy += fusion(mass, endothermic);
+                castlemanHeatEnergy += iceEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
+            } else if (endingPhase.equals("Water Vapor")) {
+                castlemanHeatEnergy += vaporization(mass, endothermic);
+                castlemanHeatEnergy += vaporEnergy(mass, startingTemp, endingTemp, endingPhase, endothermic);
             }
         }
         System.out.println("Total Heat Energy: " + castlemanHeatEnergy + " kJ");
